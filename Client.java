@@ -248,10 +248,13 @@ public class Client
 			infile.read(message);
 			
 			//append the hash/mac for data integrity
-			messagehash = Utilities.append_hash(message, aesKey);
+			//////////messagehash = Utilities.append_hash(message, aesKey);
 			
 			//Encrypt the message/mac
-			ciphertext = Utilities.encrypt(messagehash, aesKey);
+			//ciphertext = Utilities.encrypt(messagehash, aesKey);
+			TEA tea = new TEA(aesKey);
+			ciphertext = tea.encrypt(message);
+			/////ciphertext = TEA.encrypt(messagehash, aesKey);
 			
 			debug("Sending ciphertext");
 			

@@ -18,6 +18,10 @@ import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
 
 import java.math.BigInteger;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Random;
 
 import sun.misc.BASE64Decoder;
@@ -90,7 +94,9 @@ public class ServerThread extends Thread
 	 * ask to be disconnected with "exit" or to shutdown the server with "die".
 	 */
 	public void run ()
-	{		
+	{
+
+
 		try {
 			in = new DataInputStream(sock.getInputStream());
 			out = new DataOutputStream(sock.getOutputStream());
@@ -103,7 +109,23 @@ public class ServerThread extends Thread
 			System.out.println ("Could not establish communication.");
 			return;
 		}
+
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			Connection con = DriverManager.getConnection(
+					"jdbc:mysql://localhost:3306/crypto", "root", "MyNewPass");
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("select * from emp");
+			while (rs.next())
+				System.out.println(rs.getInt(1) + "  " + rs.getString(2) + "  " + rs.getString(3));
+			con.close();
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+
 		
+
+
 		//Generate a key to use to encrypt files
 		aesKey = key_agreement();
 		debug(new String(aesKey));
@@ -229,6 +251,7 @@ public class ServerThread extends Thread
 	
 	public void get_file()
 	{
+		TEA tea = new TEA(aesKey);
 		FileOutputStream outfile;
 		String filename;
 		byte[] message;
@@ -254,8 +277,24 @@ public class ServerThread extends Thread
 			debug("Decrypting message");
 			
 			//decrypt message
-			message = Utilities.decrypt(ciphertext, aesKey);
-			
+			////message = Utilities.decrypt(ciphertext, aesKey);
+			message = tea.decrypt(ciphertext);
+
+			//Create checksum for this file
+			File file = new File(String.valueOf(message));
+
+//Use MD5 algorithm
+			MessageDigest md5Digest = MessageDigest.getInstance("MD5");
+
+//Get the checksum
+			String checksum = Utilities.getFileChecksum(md5Digest, file);
+
+//see checksum
+			System.out.println(checksum);
+
+
+
+
 			if(Utilities.verify_hash(message, aesKey))
 			{
 				debug("Signature verification passed");

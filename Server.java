@@ -6,53 +6,53 @@ Server.java
 */
 import java.io.IOException;
 import java.net.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Vector;
 
 
-public class Server
-{
+public class Server {
 	private ServerSocket serversock;
-	private Vector <ServerThread> serverthreads;  //holds the active threads
+	private Vector<ServerThread> serverthreads;  //holds the active threads
 	private boolean shutdown;  //allows clients to shutdown the server
 	private int clientcounter;  //id numbers for the clients
-	
-	boolean debug = false;	//print debug messages?
+
+	boolean debug = false;    //print debug messages?
 
 	/**
 	 * Main method
+	 *
 	 * @param args First argument should be the port to listen on.
 	 */
-	public static void main (String [] args)
-	{
+	public static void main(String[] args) {
 		boolean setDebug = false;
-		
-		if (args.length < 1)
-		{
-			System.out.println ("Usage: java Server port#");
+
+		if (args.length < 1) {
+			System.out.println("Usage: java Server port#");
 			return;
 		}
-		if (args.length == 2)
-		{
-			if(args[1].compareTo("debug") == 0)
-			{
+		if (args.length == 2) {
+			if (args[1].compareTo("debug") == 0) {
 				setDebug = true;
 			}
 		}
 
 		try {
-			Server serv = new Server (Integer.parseInt(args[0]), setDebug);
-		}
-		catch (ArrayIndexOutOfBoundsException e) {
-			System.out.println ("Usage: java Server port#");
-			System.out.println ("Second argument is not a port number.");
+			Server serv = new Server(Integer.parseInt(args[0]), setDebug);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			System.out.println("Usage: java Server port#");
+			System.out.println("Second argument is not a port number.");
+			return;
+		} catch (NumberFormatException e) {
+			System.out.println("Usage: java Server port#");
+			System.out.println("Second argument is not a port number.");
 			return;
 		}
-		catch (NumberFormatException e) {
-			System.out.println ("Usage: java Server port#");
-			System.out.println ("Second argument is not a port number.");
-			return;
-		}
-	}
+
+
+}
 	
 	/**
 	 * Constructor, makes a new server listening on specified port.
@@ -60,6 +60,8 @@ public class Server
 	 */
 	public Server (int port, boolean setDebug)
 	{
+
+
 		debug = setDebug; 
 		
 		clientcounter = 0;
