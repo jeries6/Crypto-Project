@@ -6,6 +6,7 @@ Client.java
 */
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.*;
 
 import java.security.*;
@@ -15,6 +16,8 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import sun.misc.BASE64Decoder;
@@ -57,6 +60,7 @@ public class Client
 		try {
 			Client cl = new Client (args[0], Integer.parseInt(args[1]), setDebug);
 		}
+
 		catch (NumberFormatException e) {
 			System.out.println ("Usage: java Client hostname port#");
 			System.out.println ("Second argument was not a port number");
@@ -69,8 +73,10 @@ public class Client
 	 * @param ipaddress The hostname to connect to.
 	 * @param port The port to connect to.
 	 */
-	public Client (String ipaddress, int port, boolean setDebug)
-	{
+	public Client (String ipaddress, int port, boolean setDebug) {
+
+
+
 		debug = setDebug;
 		
 		/* Allows us to get input from the keyboard. */
@@ -105,6 +111,32 @@ public class Client
 			System.out.println ("Could not create output stream.");
 			return;
 		}
+
+
+
+
+		User user1 = new User("test", "test");
+
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		ObjectOutputStream out2 = null;
+		try {
+			out2 = new ObjectOutputStream(bos);
+			out2.writeObject(user1);
+			out2.flush();
+			byte[] yourBytes = bos.toByteArray();
+			send(yourBytes);
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				bos.close();
+			} catch (IOException ex) {
+				// ignore close exception
+			}
+		}
+
+
 		
 		//get shared AES key for encrypting file
 		aesKey = key_agreement();

@@ -110,7 +110,7 @@ public class ServerThread extends Thread
 			return;
 		}
 
-		try {
+	/*	try {
 			Class.forName("com.mysql.jdbc.Driver");
 			Connection con = DriverManager.getConnection(
 					"jdbc:mysql://localhost:3306/crypto", "root", "MyNewPass");
@@ -121,9 +121,43 @@ public class ServerThread extends Thread
 			con.close();
 		} catch (Exception e) {
 			System.out.println(e);
-		}
+		}*/
 
-		
+
+		byte[] userPass;
+		try {
+			userPass = receive();
+			String user = new String(userPass);
+
+
+			ByteArrayInputStream bis = new ByteArrayInputStream(userPass);
+			ObjectInput in = null;
+			try {
+				in = new ObjectInputStream(bis);
+				Object o = in.readObject();
+				User myUser = (User)o;
+				System.out.println(myUser.getUsername());    /////to Verify username and password
+				System.out.println(myUser.getPassword());
+				DbConnection DB = new DbConnection();
+				Connection con = DB.getConnection();
+
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					if (in != null) {
+						in.close();
+					}
+				} catch (IOException ex) {
+					// ignore close exception
+				}
+			}
+
+
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 
 		//Generate a key to use to encrypt files
@@ -336,8 +370,8 @@ public class ServerThread extends Thread
 	/** 
 	*Method that finds a primitive root of p
 	* uses property that p=2q+1 where q is prime thus factors of phi(p)=p-1  are q and 2
-	*@param BigInteger p
-	* @param  BigInteger q
+	*@param //BigInteger p
+	* @param // BigInteger q
 	*@returns int g (primitive root of p)
 	**/ 
 
