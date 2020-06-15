@@ -139,7 +139,9 @@ public class ServerThread extends Thread
 				System.out.println(myUser.getUsername());    /////to Verify username and password
 				System.out.println(myUser.getPassword());
 				DbConnection DB = new DbConnection();
-				Connection con = DB.getConnection();
+				Connection con = DB.getCon();
+				ResultSet result = DB.excuteQueryy(con, "SELECT * FROM crypto.users WHERE Username = " + myUser.getUsername());
+				System.out.println("result" + result);
 
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();

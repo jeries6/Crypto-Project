@@ -27,20 +27,9 @@ public class Server {
 	 * @param args First argument should be the port to listen on.
 	 */
 	public static void main(String[] args) {
-		boolean setDebug = false;
-
-		if (args.length < 1) {
-			System.out.println("Usage: java Server port#");
-			return;
-		}
-		if (args.length == 2) {
-			if (args[1].compareTo("debug") == 0) {
-				setDebug = true;
-			}
-		}
 
 		try {
-			Server serv = new Server(Integer.parseInt(args[0]), setDebug);
+			Server serv = new Server(8080, true);
 		} catch (ArrayIndexOutOfBoundsException e) {
 			System.out.println("Usage: java Server port#");
 			System.out.println("Second argument is not a port number.");

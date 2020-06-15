@@ -1,14 +1,13 @@
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.*;
 
 public class DbConnection {
 
-    public Connection getConnection()
+    public Connection getCon()
     {
         		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/crypto?serverTimezone=AST", "root", "MyNewPass");
+					"jdbc:mysql://localhost:3306/crypto?serverTimezone=AST", "root", "password");
 			return con;
 /*			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("select * from emp");
@@ -20,5 +19,22 @@ public class DbConnection {
 		}
         		return null;
     }
+
+    public ResultSet excuteQueryy(Connection con, String query){
+
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			return rs;
+		} catch (SQLException e ) {
+			System.out.println(e);
+			try {
+				con.close();
+			}catch (SQLException err){
+				System.out.println(err);
+			}
+		}
+		return null;
+	}
 
 }

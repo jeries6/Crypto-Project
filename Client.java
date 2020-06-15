@@ -20,11 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
 
-public class Client 
+public class Client
 {
 	private Socket sock;  			//Socket to communicate with.
 	private DataOutputStream out;	//outstream for sock
@@ -38,35 +42,35 @@ public class Client
 	 * Main method, starts the client.
 	 * @param args args[0] needs to be a hostname, args[1] a port number.
 	 */
-	public static void main (String [] args)
-	{
-		boolean setDebug = false;
-		
-		if (args.length < 2)
-		{
-			System.out.println ("Usage: java Client hostname port# <debug>");
-			System.out.println ("hostname is a string identifying your server");
-			System.out.println ("port is a positive integer identifying the port to connect to the server");
-			return;
-		}
-		if (args.length == 3)
-		{
-			if(args[2].compareTo("debug") == 0)
-			{
-				setDebug = true;
-			}
-		}
-
-		try {
-			Client cl = new Client (args[0], Integer.parseInt(args[1]), setDebug);
-		}
-
-		catch (NumberFormatException e) {
-			System.out.println ("Usage: java Client hostname port#");
-			System.out.println ("Second argument was not a port number");
-			return;
-		}
-	}
+//	public static void main (String [] args)
+//	{
+//		boolean setDebug = false;
+//
+//		if (args.length < 2)
+//		{
+//			System.out.println ("Usage: java Client hostname port# <debug>");
+//			System.out.println ("hostname is a string identifying your server");
+//			System.out.println ("port is a positive integer identifying the port to connect to the server");
+//			return;
+//		}
+//		if (args.length == 3)
+//		{
+//			if(args[2].compareTo("debug") == 0)
+//			{
+//				setDebug = true;
+//			}
+//		}
+//
+//		try {
+//			Client cl = new Client (args[0], Integer.parseInt(args[1]), setDebug);
+//		}
+//
+//		catch (NumberFormatException e) {
+//			System.out.println ("Usage: java Client hostname port#");
+//			System.out.println ("Second argument was not a port number");
+//			return;
+//		}
+//	}
 	
 	/**
 	 * Constructor, in this case does everything.
@@ -335,5 +339,5 @@ public class Client
 	{
 		if(debug) System.out.println("Debug: " + s);
 	}
-	
+
 }
