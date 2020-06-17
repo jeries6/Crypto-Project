@@ -77,55 +77,46 @@ public class Client
 	 * @param ipaddress The hostname to connect to.
 	 * @param port The port to connect to.
 	 */
-	public Client (String ipaddress, int port, boolean setDebug) {
-
+	public Client (String ipaddress, int port, boolean setDebug, User newUser) {
 
 
 		debug = setDebug;
-		
+
 		/* Allows us to get input from the keyboard. */
 		BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-		
+
 		/* Try to connect to the specified host on the specified port. */
 		try {
-			sock = new Socket (InetAddress.getByName(ipaddress), port);
-		}
-		catch (UnknownHostException e) {
-			System.out.println ("Usage: java Client hostname port#");
-			System.out.println ("First argument is not a valid hostname");
+			sock = new Socket(InetAddress.getByName(ipaddress), port);
+		} catch (UnknownHostException e) {
+			System.out.println("Usage: java Client hostname port#");
+			System.out.println("First argument is not a valid hostname");
+			return;
+		} catch (IOException e) {
+			System.out.println("Could not connect to " + ipaddress + ".");
 			return;
 		}
-		catch (IOException e) {
-			System.out.println ("Could not connect to " + ipaddress + ".");
-			return;
-		}
-		
+
 		/* Status info */
-		System.out.println ("Connected to " + sock.getInetAddress().getHostAddress() + " on port " + port);
-		
+		System.out.println("Connected to " + sock.getInetAddress().getHostAddress() + " on port " + port);
+
 		try {
 			in = new DataInputStream(sock.getInputStream());
 			out = new DataOutputStream(sock.getOutputStream());
-		}
-		catch (UnknownHostException e) {
-			System.out.println ("Unknown host error.");
+		} catch (UnknownHostException e) {
+			System.out.println("Unknown host error.");
+			return;
+		} catch (IOException e) {
+			System.out.println("Could not create output stream.");
 			return;
 		}
-		catch (IOException e) {
-			System.out.println ("Could not create output stream.");
-			return;
-		}
 
-
-
-
-		User user1 = new User("test", "test");
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		ObjectOutputStream out2 = null;
 		try {
 			out2 = new ObjectOutputStream(bos);
-			out2.writeObject(user1);
+			out2.writeObject(newUser);
 			out2.flush();
 			byte[] yourBytes = bos.toByteArray();
 			send(yourBytes);
@@ -140,9 +131,22 @@ public class Client
 			}
 		}
 
+		String AuthVerify = null;
+		try {
+			AuthVerify = new String(receive());
+			debug("Receiving verification status: " + AuthVerify);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		debug("Client Authinting" + AuthVerify);
 
-		
-		//get shared AES key for encrypting file
+		if (AuthVerify.compareTo("authError") == 0) {
+			return;
+
+		}
+
+
+		//get shared TEA key for encrypting file from diffie hellman
 		aesKey = key_agreement();
 		debug(new String(aesKey));
 		
@@ -268,6 +272,7 @@ public class Client
 			debug("Starting File Transfer");
 			System.out.println("Please enter the source filename:");
 			infilename = stdIn.readLine();
+			debug("FILE NAME: " + infilename);
 			infile = new FileInputStream(infilename);
 			
 			System.out.println("Please enter the destination filename:");
@@ -301,6 +306,7 @@ public class Client
 			
 			debug("get verification status");
 			String verified = new String(receive());
+			debug("Client has received: " + verified);
 			
 			if(verified.compareTo("Passed") == 0)
 			{

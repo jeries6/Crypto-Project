@@ -15,6 +15,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.math.BigInteger;
+import java.util.Formatter;
 
 
 public class Utilities {
@@ -22,7 +23,7 @@ public class Utilities {
 	/** 
 	*Method that hashes a Diffie-Hellman key into a usable 128 bit AES key
 	*used with Client.java and Server.java
-	*@param byte[] key (Diffie Hellman key)
+	*@param ///byte[] key (Diffie Hellman key)
 	*@returns byte[]  (128 bit AES key)
 	**/ 
 	public static byte[] keyhash(byte[] key){
@@ -210,6 +211,14 @@ public class Utilities {
 	    return 0;
 	    
 	}
+
+	public static String byteArray2Hex(final byte[] hash) {
+		Formatter formatter = new Formatter();
+		for (byte b : hash) {
+			formatter.format("%02x", b);
+		}
+		return formatter.toString();
+	}
 	
 	public static byte[] receive(DataInputStream in) throws IOException
 	{
@@ -232,9 +241,9 @@ public class Utilities {
 
 	/** 
 	*calculates g^q mod p using fast exponentiation algorithm
-	*@param BigInteger g
-	*@param BigInteger q
-	*@param BigInteger p
+	*@param ///BigInteger g
+	*@param ///BigInteger q
+	*@param ///BigInteger p
 	*@returns BigInteger (result of g^q mod p)
 	**/ 
 	public static BigInteger fastmodexp(BigInteger g, BigInteger q, BigInteger p){
@@ -255,4 +264,12 @@ public class Utilities {
 		} 
 		return r;
 	}
+
+	public static String generateHash(byte[] arr) throws NoSuchAlgorithmException {
+		MessageDigest md = MessageDigest.getInstance("SHA-1");
+		String resultOfHash = Utilities.byteArray2Hex(md.digest(arr));
+		return resultOfHash;
+	}
 }
+
+

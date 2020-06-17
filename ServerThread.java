@@ -2,7 +2,7 @@
 10020767
 Assignment 3 CPSC 418
 University of Calgary
-ServerThread.java, 
+ServerThread.java,
 
 Implemented the run() method
 
@@ -18,10 +18,7 @@ import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
 
 import java.math.BigInteger;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Random;
 
 import sun.misc.BASE64Decoder;
@@ -48,12 +45,12 @@ public class ServerThread extends Thread
 	private Socket sock;  		//The socket it communicates with the client on.
 	private DataOutputStream out;	//Out stream to the client
 	private DataInputStream in;		//instream for sock
-	
+
 	private byte[] aesKey;		// shared AES key for all encryption
-	
+
 	private Server parent;			//Reference to Server object for message passing.
 	private int idnum; 				//The client's id number.
-	
+
 	/**
 	 * Constructor, does the usual stuff.
 	 * @param s Communication Socket.
@@ -66,7 +63,7 @@ public class ServerThread extends Thread
 		sock = s;
 		idnum = id;
 	}
-	
+
 	/**
 	 * Getter for id number.
 	 * @return ID Number
@@ -75,7 +72,7 @@ public class ServerThread extends Thread
 	{
 		return idnum;
 	}
-	
+
 	/**
 	 * Getter for the socket, this way the parent thread can
 	 * access the socket and close it, causing the thread to
@@ -87,7 +84,7 @@ public class ServerThread extends Thread
 	{
 		return sock;
 	}
-	
+
 	/**
 	 * This is what the thread does as it executes.  Listens on the socket
 	 * for incoming data and then echos it to the screen.  A client can also
@@ -95,8 +92,6 @@ public class ServerThread extends Thread
 	 */
 	public void run ()
 	{
-
-
 		try {
 			in = new DataInputStream(sock.getInputStream());
 			out = new DataOutputStream(sock.getOutputStream());
@@ -110,42 +105,136 @@ public class ServerThread extends Thread
 			return;
 		}
 
-	/*	try {
-			Class.forName("com.mysql.jdbc.Driver");
-			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/crypto", "root", "MyNewPass");
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("select * from emp");
-			while (rs.next())
-				System.out.println(rs.getInt(1) + "  " + rs.getString(2) + "  " + rs.getString(3));
-			con.close();
-		} catch (Exception e) {
-			System.out.println(e);
-		}*/
-
+		boolean authPassed = false;
+		User myUser = null;
 
 		byte[] userPass;
-		try {
+/*		try {
+			authPassed = true;
 			userPass = receive();
-			String user = new String(userPass);
-
-
 			ByteArrayInputStream bis = new ByteArrayInputStream(userPass);
 			ObjectInput in = null;
 			try {
 				in = new ObjectInputStream(bis);
-				Object o = in.readObject();
-				User myUser = (User)o;
-				System.out.println(myUser.getUsername());    /////to Verify username and password
-				System.out.println(myUser.getPassword());
+				Object obj = in.readObject();
+				myUser = (User) obj;      ////validate user and pass existence
 				DbConnection DB = new DbConnection();
 				Connection con = DB.getCon();
-				ResultSet result = DB.excuteQueryy(con, "SELECT * FROM crypto.users WHERE Username = " + myUser.getUsername());
-				System.out.println("result" + result);
+
+				String query = "SELECT Password FROM crypto.users WHERE username = '" + myUser.getUsername() + "'";
+				String passFromDB = null;
+				ResultSet result = DB.excuteQueryy(con, query);
+				while (result.next())
+					passFromDB = result.getString(1);
+
+				String hashOfPass = null;
+
+				if (passFromDB != null) {
+					hashOfPass = String.valueOf(passFromDB.hashCode());
+					if (hashOfPass.compareTo(myUser.getPassword()) != 0) {
+						debug("Auth Failed");
+						send("authError");
+						authPassed = false;
+
+						parent.kill (this);
+						try {
+							out.close();
+							in.close ();
+							sock.close ();
+							return;
+						}
+						catch (IOException e)
+						{
+							return;
+						}
+
+					}
+				}
+				if (passFromDB == null) {
+					send("authError");
+					parent.kill (this);
+					try {
+						out.close();
+						in.close ();
+						sock.close ();
+						return;
+					}
+					catch (IOException e)
+					{
+						return;
+					}
+
+				}
+				debug("PASSSSED");
+
+				send("Pass");
+
+
 
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
-			} finally {
+			} catch (SQLException throwables) {
+				throwables.printStackTrace();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+				try {
+					if (in != null) {
+						in.close();
+					}
+				} catch (IOException ex) {
+					// ignore close exception
+				}
+			}*/
+
+
+
+		try {
+			userPass = receive();
+			ByteArrayInputStream bis = new ByteArrayInputStream(userPass);
+			ObjectInput in = null;
+			try {
+				in = new ObjectInputStream(bis);
+				Object obj = in.readObject();
+				myUser = (User)obj;      ////validate user and pass existence
+
+				DbConnection DB = new DbConnection();
+				Connection con = DB.getCon();
+
+				String query = "SELECT Password FROM crypto.users WHERE username = '" + myUser.getUsername() + "'";
+				String passFromDB = null;
+				ResultSet result = DB.excuteQueryy(con, query);
+				while (true) {
+					try {
+						if (!result.next()) break;
+					} catch (SQLException throwables) {
+						throwables.printStackTrace();
+					}
+					try {
+						passFromDB = result.getString(1);
+					} catch (SQLException throwables) {
+						throwables.printStackTrace();
+					}
+				}
+				System.out.println("myPASS:" + passFromDB);
+				if(String.valueOf(passFromDB.hashCode()).compareTo(myUser.getPassword()) != 0) {
+					send("authError");
+					parent.kill (this);
+					try {
+						out.close();
+						in.close ();
+						sock.close ();
+						return;
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				send("Pass");
+
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}  finally {
 				try {
 					if (in != null) {
 						in.close();
@@ -154,9 +243,6 @@ public class ServerThread extends Thread
 					// ignore close exception
 				}
 			}
-
-
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -165,26 +251,27 @@ public class ServerThread extends Thread
 		//Generate a key to use to encrypt files
 		aesKey = key_agreement();
 		debug(new String(aesKey));
-		
+
 		//Get a file from the client
-		get_file();
-		
+		get_file(myUser);
+
 		parent.kill (this);
 		try {
 			out.close();
 			in.close ();
 			sock.close ();
+			return;
 		}
 		catch (IOException e)
 		{
 			return;
 		}
 	}
-	
+
 	public byte[] key_agreement()
 	{
 		debug("Starting key agreement in Server");
-		
+
 		try{
 			//Generate the prime number p=2q+1 using 1024 bit q
 			boolean pprime= false;
@@ -198,15 +285,15 @@ public class ServerThread extends Thread
 
 			debug("Finding safe prime (this may take several minutes)");
 			while( !(pprime) ){
-			
+
 				//q is a prime with certainty 1-1/2^100
 				q= BigInteger.probablePrime(1024,myrand);
 
 				p= q.shiftLeft(1);	//p=2q
 				p= p.setBit(0);	//p=2q+1
 
-				pprime= p.isProbablePrime(certainty);		
-				
+				pprime= p.isProbablePrime(certainty);
+
 			}
 
 			debug("Server calculated q:"+ q );
@@ -226,37 +313,37 @@ public class ServerThread extends Thread
 			int g= findPrimitive(p,q);
 			BigInteger bigg= BigInteger.valueOf( (long) g);
 			debug("Server calculated g:"+g);
-			
+
 			//Encode and Send g to the client
 			//to be encoded in base 64
-			
+
 			String biggstring = mybase64encoder.encodeBuffer(  bigg.toByteArray() );
 			send(biggstring);
 			debug("Sending g to Client");
 
 			//Generate the private data (random b)
 			boolean goodb= false;
-			BigInteger pminusone= p.subtract( one);			
+			BigInteger pminusone= p.subtract( one);
  			BigInteger b=null;
-			while( !goodb ){ 
+			while( !goodb ){
 				b = new BigInteger(1025,myrand);
 				if (b.compareTo(pminusone) < 0){
 					goodb= true;
-				}	
+				}
 			}
 
 			//Compute the public key (g^b) (using your own fast exponentiation)
 
 			BigInteger yb= Utilities.fastmodexp( BigInteger.valueOf((long) g) ,b,p);
 
-			//Encode the public key in base 64 
-     			
+			//Encode the public key in base 64
+
   			String yb64string = mybase64encoder.encodeBuffer(  yb.toByteArray() );
-			
+
 			//send the encoded clients public key
 			debug("Sending public key, yb ,  to Client");
 			send(yb64string);
-			
+
 			debug("Receiving Client's public key, ya");
 			//get client public key
 			byte[] yastringbytes = receive();
@@ -267,75 +354,83 @@ public class ServerThread extends Thread
   			BASE64Decoder mybase64decoder = new BASE64Decoder( );
   			byte[] yabytes = mybase64decoder.decodeBuffer( new String(yastringbytes)  );
 			BigInteger ya= new BigInteger(yabytes);
-			
+
 			//Get shared key
 			debug("Derive the DH key in Server");
 			// key = (g^a)^b
-			BigInteger key= Utilities.fastmodexp(ya,b,p); 
+			BigInteger key= Utilities.fastmodexp(ya,b,p);
 
 			//Apply a hash function to the key
 			byte[] secretKey = Utilities.keyhash(key.toByteArray() );
 
 			debug("Done key agreement");
 			return secretKey;
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		}
 	}
-	
-	public void get_file()
+
+	public void get_file(User user)
 	{
 		TEA tea = new TEA(aesKey);
 		FileOutputStream outfile;
 		String filename;
 		byte[] message;
 		byte[] ciphertext;
-		
+
 		try {
 			debug("Begin getting file");
-			
+
 			//Get the filename to write to
 			debug("r: filename");
 			filename = new String(Utilities.decrypt(receive(), aesKey));
 			System.out.println("Receiving " + filename);
-			
+
 			//get file size
 			byte[] fsize = receive();
-			
+
 			outfile = new FileOutputStream(filename);
-			
+
 			//Get the encrypted, integrity-protected file
 			debug("r: message");
-			ciphertext = receive();			
-			
+			ciphertext = receive();
+
 			debug("Decrypting message");
-			
+
 			//decrypt message
 			////message = Utilities.decrypt(ciphertext, aesKey);
 			message = tea.decrypt(ciphertext);
 
-			//Create checksum for this file
-			File file = new File(String.valueOf(message));
+			//int retVal = message.hashCode();
 
-//Use MD5 algorithm
-			MessageDigest md5Digest = MessageDigest.getInstance("MD5");
-
-//Get the checksum
-			String checksum = Utilities.getFileChecksum(md5Digest, file);
-
-//see checksum
-			System.out.println(checksum);
+			MessageDigest md = MessageDigest.getInstance("SHA-1");
+			String resultOfHash = Utilities.byteArray2Hex(md.digest(message));
 
 
+			DbConnection DB = new DbConnection();
+			Connection con = DB.getCon();
+			String query = "SELECT HashCode FROM crypto.imageshash WHERE Username = '" + user.getUsername() + "'";
+			ResultSet result = DB.excuteQueryy(con, query);
+			//con.close();
+			String resultFromDB = null;
+			while (result.next())
+				resultFromDB = result.getString(1);
+			System.out.println("hahaha" + resultFromDB);
+			debug("Verifying ur img");
+			if(resultFromDB.compareTo(resultOfHash) == 0) {
+				send("Passed");
+				System.out.println("I've passed the comparing stage");
+			}
+			else
+				send("Sharmota bro");
 
-
-			if(Utilities.verify_hash(message, aesKey))
+/*			if(Utilities.verify_hash(message, aesKey))
 			{
 				debug("Signature verification passed");
 				send("Passed");
-				
+
 				//Write all but the hash to the file
 				outfile.write(message, 0, message.length-20);
 			}
@@ -344,55 +439,54 @@ public class ServerThread extends Thread
 				debug("Signature verification failed");
 				send("Failed");
 			}
-			
+			*/
+
 			outfile.close();
-			
+
 			debug("done getting file");
 		} catch (Exception e) {
 			return;
 		}
 	}
-	
+
 	public int send(String message){
 		return Utilities.send(message.getBytes(), out);
 	}
-	
+
 	public int send(byte[] message){
 		return Utilities.send(message, out);
 	}
-	
+
 	public byte[] receive() throws IOException{
 		return Utilities.receive(in);
 	}
-	
+
 	private void debug(String s){
 		if(parent.debug) System.out.println("Debug: " + s);
 	}
 
-	/** 
+	/**
 	*Method that finds a primitive root of p
 	* uses property that p=2q+1 where q is prime thus factors of phi(p)=p-1  are q and 2
 	*@param //BigInteger p
 	* @param // BigInteger q
 	*@returns int g (primitive root of p)
-	**/ 
+	**/
 
 	private static int findPrimitive(BigInteger p, BigInteger q){
 		int g=1;
 		boolean foundprimitive= false;
-		
+
 		BigInteger one= BigInteger.valueOf( (long) 1);
 
 		while( ! (foundprimitive) ) {
-
 			g++;
-
 			//check g^2 first, so we don't need to use fast modular exponentiation unless it passes
-			
+
 			BigInteger bigg= BigInteger.valueOf( (long) g );
 			BigInteger biggsq= bigg.multiply(bigg);
 			BigInteger gsqmodp = bigg.remainder(p);
-			
+
 			if ( one.compareTo(gsqmodp) != 0 ){
 				//g^2 mod p is not 1 so check g^q
 
@@ -401,7 +495,7 @@ public class ServerThread extends Thread
 				if ( one.compareTo( biggtoqmodp) != 0){
 
 					foundprimitive = true;
-				}				
+				}
 			}
 		}
 		return g;

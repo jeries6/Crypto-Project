@@ -13,16 +13,19 @@ public class NewController {
     @FXML
     public void setConnection(ActionEvent event) {
 
-    try {
-      System.out.println("I M CLICKED HARD");
-      Client cl = new Client ("localhost", 8080, true);
-      flag = true;
+      String pass = password.getText().toString();
+      int hash = pass.hashCode();
+      User usr = new User(user.getText().toString(), String.valueOf(hash));
+        try {
+          System.out.println("I M CLICKED HARD");
+          Client cl = new Client("localhost", 8080, true, usr);
+          flag = true;
+        } catch (NumberFormatException e) {
+          System.out.println("Usage: java Client hostname port#");
+          System.out.println("Second argument was not a port number");
+          return;
+        }
+
     }
 
-    catch (NumberFormatException e) {
-      System.out.println ("Usage: java Client hostname port#");
-      System.out.println ("Second argument was not a port number");
-      return;
     }
-  }
-}
